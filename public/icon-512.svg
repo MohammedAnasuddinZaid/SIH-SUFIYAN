@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="100" fill="#0c1e3a"/>
+  <circle cx="256" cy="200" r="85" fill="none" stroke="#22d3ee" stroke-width="14"/>
+  <path d="M160 288 c0 0 48 76 96 76 s96-76 96-76" stroke="#22d3ee" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <path d="M135 345 c0 0 58 92 121 92 s121-92 121-92" stroke="#10b981" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <text x="256" y="468" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="52" fill="white">JAL-SURAKSHA</text>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" fill="none">
+  <rect width="192" height="192" rx="40" fill="#0c1e3a"/>
+  <circle cx="96" cy="76" r="32" fill="none" stroke="#22d3ee" stroke-width="6"/>
+  <path d="M60 108 c0 0 18 28 36 28 s36-28 36-28" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M50 130 c0 0 22 34 46 34 s46-34 46-34" stroke="#10b981" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <text x="96" y="175" text-anchor="middle" font-family="system-ui" font-weight="700" font-size="20" fill="white">JAL</text>
+</svg>

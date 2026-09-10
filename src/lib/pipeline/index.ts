@@ -63,14 +63,21 @@ function fallbackHydrology(): Hydrol {
     return d.toISOString().split("T")[0];
   });
 
-  const flood: FloodPoint[] = gauges.map((gauge, gi) => ({
-    gauge,
-    dates,
-    discharge: seededSeries(gi + 1, 45, gauge.baseM3s, gauge.baseM3s * 0.28),
-    dischargeMax: seededSeries(gi + 101, 45, gauge.baseM3s * 1.1, gauge.baseM3s * 0.3),
-    dischargeMin: seededSeries(gi + 201, 45, gauge.baseM3s * 0.9, gauge.baseM3s * 0.2),
-    dischargeMean: seededSeries(gi + 301, 45, gauge.baseM3s, gauge.baseM3s * 0.24),
-  }));
+  const flood: FloodPoint[] = gauges.map((gauge, gi) => {
+    const hist = seededSeries(gi + 1, 45, gauge.baseM3s, gauge.baseM3s * 0.28);
+    const histMax = seededSeries(gi + 101, 45, gauge.baseM3s * 1.1, gauge.baseM3s * 0.3);
+    const histMin = seededSeries(gi + 201, 45, gauge.baseM3s * 0.9, gauge.baseM3s * 0.2);
+    const histMean = seededSeries(gi + 301, 45, gauge.baseM3s, gauge.baseM3s * 0.24);
+    const lastVal = hist[hist.length - 1] ?? gauge.baseM3s;
+    return {
+      gauge,
+      dates: [...dates, ...forecastDates],
+      discharge: [...hist, ...forecastDates.map((_, fi) => round(lastVal + Math.sin(fi / 3) * gauge.baseM3s * 0.15, 2))],
+      dischargeMax: [...histMax, ...forecastDates.map((_, fi) => round((lastVal * 1.1) + Math.sin(fi / 3) * gauge.baseM3s * 0.18, 2))],
+      dischargeMin: [...histMin, ...forecastDates.map((_, fi) => round((lastVal * 0.9) + Math.sin(fi / 3) * gauge.baseM3s * 0.12, 2))],
+      dischargeMean: [...histMean, ...forecastDates.map((_, fi) => round(lastVal + Math.cos(fi / 2) * gauge.baseM3s * 0.1, 2))],
+    };
+  });
 
   const rain: WeatherPoint[] = gauges.map((gauge, gi) => ({
     gauge,
@@ -89,12 +96,13 @@ function buildRiver(gauge: (typeof gauges)[number], hydrol: Hydrol): RiverLiveDa
   const floodPoint = hydrol.flood?.find((f) => f.gauge.riverId === gauge.riverId);
   const rainPoint = hydrol.rain?.find((r) => r.gauge.riverId === gauge.riverId);
 
+  const allDates = floodPoint?.dates ?? [];
   const obsHistory = floodPoint?.discharge ?? [];
-  const obsDates = floodPoint?.dates ?? [];
-  const fcDates = floodPoint?.dates.slice(-10) ?? [];
-  const fcMean = floodPoint?.dischargeMean.slice(-10) ?? [];
-  const fcMin = floodPoint?.dischargeMin.slice(-10) ?? [];
-  const fcMax = floodPoint?.dischargeMax.slice(-10) ?? [];
+  const obsDates = allDates.slice(0, 45);
+  const fcDates = allDates.slice(45);
+  const fcMean = floodPoint?.dischargeMean.slice(45) ?? [];
+  const fcMin = floodPoint?.dischargeMin.slice(45) ?? [];
+  const fcMax = floodPoint?.dischargeMax.slice(45) ?? [];
 
   const rainHistory = rainPoint?.precipitation ?? [];
   const rainDates = rainPoint?.dates ?? [];
@@ -237,11 +245,12 @@ export async function getLiveSnapshot(): Promise<LiveSnapshot> {
     },
   ];
 
+  const hydroLive = sources.filter((s) => s.key === "glofas" || s.key === "open-meteo-weather");
   const mode =
-    sources.some((s) => s.isLive) && sources.some((s) => s.status !== "live")
-      ? "hybrid"
-      : sources.every((s) => s.isLive)
-        ? "live"
+    hydroLive.every((s) => s.isLive)
+      ? "live"
+      : hydroLive.some((s) => s.isLive)
+        ? "hybrid"
         : "simulated";
 
   const snapshot: LiveSnapshot = {

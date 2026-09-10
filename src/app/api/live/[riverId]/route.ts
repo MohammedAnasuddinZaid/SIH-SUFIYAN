@@ -11,28 +11,33 @@ function resolveRiverId(input: string): string | null {
 }
 
 export async function GET(_req: Request, ctx: RouteContext<"/api/live/[riverId]">) {
-  const { riverId: raw } = await ctx.params;
-  const riverId = resolveRiverId(raw);
-  if (!riverId) {
-    return NextResponse.json({ error: "River not found" }, { status: 404 });
-  }
-  const snapshot = await getLiveSnapshot();
-  const river = snapshot.rivers.find((r) => r.riverId === riverId);
-  if (!river) {
-    return NextResponse.json({ error: "River data unavailable" }, { status: 404 });
-  }
-  return NextResponse.json(
-    {
-      river,
-      zones: snapshot.zones.filter((z) => z.riverId === riverId),
-      sources: snapshot.sources,
-      generatedAt: snapshot.generatedAt,
-      mode: snapshot.mode,
-    },
-    {
-      headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
-      },
+  try {
+    const { riverId: raw } = await ctx.params;
+    const riverId = resolveRiverId(raw);
+    if (!riverId) {
+      return NextResponse.json({ error: "River not found" }, { status: 404 });
     }
-  );
+    const snapshot = await getLiveSnapshot();
+    const river = snapshot.rivers.find((r) => r.riverId === riverId);
+    if (!river) {
+      return NextResponse.json({ error: "River not configured for live monitoring" }, { status: 404 });
+    }
+    return NextResponse.json(
+      {
+        river,
+        zones: snapshot.zones.filter((z) => z.riverId === riverId),
+        sources: snapshot.sources,
+        generatedAt: snapshot.generatedAt,
+        mode: snapshot.mode,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      }
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: "Failed to load river data", detail: msg }, { status: 500 });
+  }
 }

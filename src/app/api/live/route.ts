@@ -5,12 +5,17 @@ import { cacheSize } from "@/lib/pipeline/cache";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const snapshot = await getLiveSnapshot();
-  return NextResponse.json(snapshot, {
-    headers: {
-      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
-      "X-Data-Mode": snapshot.mode,
-      "X-Cache-Size": String(cacheSize()),
-    },
-  });
+  try {
+    const snapshot = await getLiveSnapshot();
+    return NextResponse.json(snapshot, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "X-Data-Mode": snapshot.mode,
+        "X-Cache-Size": String(cacheSize()),
+      },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: "Failed to load live data", detail: msg }, { status: 500 });
+  }
 }

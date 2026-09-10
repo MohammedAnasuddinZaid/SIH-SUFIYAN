@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
@@ -6,6 +6,8 @@ import Navigation from "@/components/layout/navigation";
 import Footer from "@/components/layout/footer";
 import { DemoBadge } from "@/components/shared/demo-badge";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { PwaInstallButton } from "@/components/shared/pwa-install-button";
+import { ServiceWorkerRegistration } from "@/components/shared/service-worker-registration";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +36,12 @@ export const metadata: Metadata = {
     "smart city",
     "India",
   ],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "JAL-SURAKSHA",
+  },
   openGraph: {
     type: "website",
     locale: "en_IN",
@@ -54,6 +62,13 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#0c1e3a",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -61,11 +76,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        <ServiceWorkerRegistration />
         <TooltipProvider>
           <Navigation />
           <main className="flex flex-1 flex-col">{children}</main>
           <Footer />
           <DemoBadge className="pointer-events-none fixed bottom-3 left-3 z-40 shadow-sm" />
+          <PwaInstallButton />
         </TooltipProvider>
       </body>
     </html>

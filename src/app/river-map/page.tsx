@@ -3,16 +3,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import * as maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
-import Map, {
-  Source,
-  Layer,
-  Popup,
-  NavigationControl,
-  ScaleControl,
-  FullscreenControl,
-} from "react-map-gl/maplibre";
+import dynamic from "next/dynamic";
 import type { MapRef, MapLayerMouseEvent } from "react-map-gl/maplibre";
 import {
   AlertTriangle,
@@ -28,6 +19,11 @@ import {
 
 import { cn } from "@/lib/utils";
 import { rivers } from "@/lib/demo-data/rivers";
+
+const InteractiveMap = dynamic(
+  () => import("./interactive-map").then((m) => m.InteractiveMap),
+  { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-slate-100" /> }
+);
 import { pollutionReports } from "@/lib/demo-data/reports";
 import {
   getRiverById,
@@ -343,7 +339,7 @@ function FilterPanel({
 
 function Legend() {
   return (
-    <div className="absolute bottom-4 left-4 z-10 rounded-xl border bg-white p-3 shadow-lg">
+    <div className="absolute bottom-16 left-4 z-10 rounded-xl border bg-white p-3 shadow-lg">
       <h4 className="mb-2 text-xs font-semibold text-slate-700">Legend</h4>
       <div className="space-y-1.5">
         <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
@@ -793,7 +789,7 @@ export function MapWorkspace() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col">
+    <div className="flex flex-col">
       <div className="flex items-center gap-3 border-b bg-white px-4 py-2">
         <div className="flex items-center gap-2">
           <h1 className="text-sm font-bold text-[#0c1e3a]">
@@ -841,7 +837,7 @@ export function MapWorkspace() {
       />
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <div className="relative h-[65vh] min-h-0 flex-1 lg:h-auto">
+        <div className="relative min-h-[50vh] min-h-0 flex-1 lg:h-auto lg:min-h-0">
           {mapError ? (
             <div className="flex h-full items-center justify-center bg-slate-50">
               <EmptyState
@@ -851,204 +847,27 @@ export function MapWorkspace() {
               />
             </div>
           ) : (
-            <Map
-              ref={mapRef}
-              mapLib={maplibregl}
-              mapStyle="https://tiles.openfreemap.org/styles/liberty"
+            <InteractiveMap
+              mapRef={mapRef}
               initialViewState={initialViewState}
               onLoad={handleMapLoad}
               onError={handleMapError}
               onClick={handleMapClick}
-              interactiveLayerIds={["zones-layer"]}
-              style={{ width: "100%", height: "100%" }}
-            >
-              <NavigationControl position="top-right" />
-              <ScaleControl position="bottom-left" />
-              <FullscreenControl position="top-right" />
-
-              <Source id="river-path" type="geojson" data={riverGeoJSON}>
-                <Layer
-                  id="river-line"
-                  type="line"
-                  paint={{
-                    "line-color": "#1e40af",
-                    "line-width": 3,
-                    "line-opacity": 0.8,
-                  }}
+              riverGeoJSON={riverGeoJSON}
+              zonesGeoJSON={zonesGeoJSON}
+              reportsGeoJSON={reportsGeoJSON}
+              showHeatmap={showHeatmap}
+              selectedZone={selectedZone ? { longitude: selectedZone.longitude, latitude: selectedZone.latitude, id: selectedZone.id } : null}
+              selectedSourceGeoJSON={selectedZone ? monitoringZonesToGeoJSON([selectedZone]) : undefined}
+              onDeselectZone={handleDeselectZone}
+              PopupContent={
+                <ZonePopup
+                  zone={selectedZone!}
+                  riverId={riverId}
+                  onClose={handleDeselectZone}
                 />
-              </Source>
-
-              <Source
-                id="zones-source"
-                type="geojson"
-                data={zonesGeoJSON}
-                cluster
-                clusterMaxZoom={14}
-                clusterRadius={50}
-              >
-                <Layer
-                  id="clusters"
-                  type="circle"
-                  filter={["has", "point_count"]}
-                  paint={{
-                    "circle-color": [
-                      "step",
-                      ["get", "point_count"],
-                      "#86efac",
-                      5,
-                      "#fde68a",
-                      15,
-                      "#fca5a5",
-                    ],
-                    "circle-radius": [
-                      "step",
-                      ["get", "point_count"],
-                      20,
-                      5,
-                      30,
-                      15,
-                      40,
-                    ],
-                  }}
-                />
-                <Layer
-                  id="cluster-count"
-                  type="symbol"
-                  filter={["has", "point_count"]}
-                  layout={{
-                    "text-field": "{point_count_abbreviated}",
-                    "text-size": 12,
-                  }}
-                />
-                <Layer
-                  id="zones-layer"
-                  type="circle"
-                  filter={["!", ["has", "point_count"]]}
-                  paint={{
-                    "circle-color": [
-                      "match",
-                      ["get", "riskLevel"],
-                      "Low",
-                      "#16a34a",
-                      "Medium",
-                      "#eab308",
-                      "High",
-                      "#f97316",
-                      "Critical",
-                      "#dc2626",
-                      "#64748b",
-                    ],
-                    "circle-radius": 8,
-                    "circle-stroke-width": 2,
-                    "circle-stroke-color": "#fff",
-                  }}
-                />
-                {showHeatmap && (
-                  <Layer
-                    id="zones-heatmap"
-                    type="heatmap"
-                    paint={{
-                      "heatmap-weight": [
-                        "interpolate",
-                        ["linear"],
-                        ["get", "waterQualityScore"],
-                        0,
-                        10,
-                        100,
-                        0,
-                      ],
-                      "heatmap-intensity": [
-                        "interpolate",
-                        ["linear"],
-                        ["zoom"],
-                        0,
-                        1,
-                        15,
-                        3,
-                      ],
-                      "heatmap-color": [
-                        "interpolate",
-                        ["linear"],
-                        ["heatmap-density"],
-                        0,
-                        "rgba(33,102,172,0)",
-                        0.2,
-                        "rgb(103,169,207)",
-                        0.4,
-                        "rgb(209,229,240)",
-                        0.6,
-                        "rgb(253,219,199)",
-                        0.8,
-                        "rgb(244,109,67)",
-                        1,
-                        "rgb(165,0,38)",
-                      ],
-                      "heatmap-radius": [
-                        "interpolate",
-                        ["linear"],
-                        ["zoom"],
-                        0,
-                        2,
-                        15,
-                        20,
-                      ],
-                    }}
-                  />
-                )}
-              </Source>
-
-              <Source
-                id="reports-source"
-                type="geojson"
-                data={reportsGeoJSON}
-              >
-                <Layer
-                  id="reports-layer"
-                  type="circle"
-                  paint={{
-                    "circle-color": "#0ea5e9",
-                    "circle-radius": 6,
-                    "circle-stroke-width": 2,
-                    "circle-stroke-color": "#fff",
-                  }}
-                />
-              </Source>
-
-              {selectedZone && (
-                <>
-                  <Popup
-                    longitude={selectedZone.longitude}
-                    latitude={selectedZone.latitude}
-                    anchor="bottom"
-                    offset={20}
-                    onClose={handleDeselectZone}
-                    className="!rounded-xl !shadow-lg"
-                  >
-                    <ZonePopup
-                      zone={selectedZone}
-                      riverId={riverId}
-                      onClose={handleDeselectZone}
-                    />
-                  </Popup>
-                  <Source
-                    id="selected-source"
-                    type="geojson"
-                    data={monitoringZonesToGeoJSON([selectedZone])}
-                  >
-                    <Layer
-                      id="selected-layer"
-                      type="circle"
-                      paint={{
-                        "circle-color": "rgba(255,255,255,0)",
-                        "circle-radius": 18,
-                        "circle-stroke-width": 3,
-                        "circle-stroke-color": "#ffffff",
-                      }}
-                    />
-                  </Source>
-                </>
-              )}
-            </Map>
+              }
+            />
           )}
 
           <SearchOverlay zones={allZones} onSelect={handleSearchSelect} />
