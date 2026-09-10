@@ -1,12 +1,10 @@
 import { rivers } from "./demo-data/rivers";
-import { monitoringZones, getZonesByRiver } from "./demo-data/monitoring-zones";
+import { monitoringZones } from "./demo-data/monitoring-zones";
 import { waterMeasurements, getMeasurementsByRiver } from "./demo-data/water-measurements";
 import { wasteRecords } from "./demo-data/waste";
 import { pollutionReports } from "./demo-data/reports";
-import { actions } from "./demo-data/actions";
-import { pollutionSources, anomalies, recommendations } from "./demo-data/analytics";
-import { impactMetrics } from "./demo-data/impact";
-import { River, MonitoringZone, WaterMeasurement, WasteRecord, PollutionReport, Action, PollutionSource, Anomaly, Recommendation, ImpactMetric, Severity, RiskLevel, HealthStatus, TrendDirection, WasteCategory, WaterParameterSummary, ZoneStats, RiverSummary, WasteComposition, TrendDataPoint, PollutionTrendDataPoint } from "./types";
+import { pollutionSources } from "./demo-data/analytics";
+import type { MonitoringZone, WaterParameterSummary, ZoneStats, RiverSummary, WasteComposition, TrendDataPoint, PollutionTrendDataPoint, River, RiskLevel, Severity, HealthStatus, TrendDirection, WasteCategory, PollutionSource, WaterMeasurement } from "./types";
 
 export function getRiverById(riverId: string): River | undefined {
   return rivers.find((river) => river.id === riverId);
@@ -84,12 +82,15 @@ export function getWaterQualityTrend(riverId: string, days: number): TrendDataPo
 }
 
 export function getPollutionTrend(riverId: string, days: number): PollutionTrendDataPoint[] {
-  const measurements = getMeasurementsByRiver(riverId, days);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().split("T")[0];
   const wasteByDate = new Map<string, { plastic: number; sewage: number; industrial: number; organic: number }>();
 
   const riverWaste = wasteRecords.filter((w) => w.riverId === riverId);
   riverWaste.forEach((w) => {
     const date = w.detectedAt.split("T")[0];
+    if (date < cutoffStr) return;
     const existing = wasteByDate.get(date) || { plastic: 0, sewage: 0, industrial: 0, organic: 0 };
 
     if (w.category === "Plastic") existing.plastic += w.weightKg;

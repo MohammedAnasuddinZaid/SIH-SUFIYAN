@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   Activity,
@@ -10,10 +11,10 @@ import {
 import { DemoBadge } from "@/components/shared/demo-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const metadata = {
-  title: "Analytics Center — JAL-SURAKSHA",
+export const metadata: Metadata = {
+  title: "Analytics Center",
   description:
-    "Deeper analytics across river health, pollution, waste and operations.",
+    "Focused analytical views for water quality, pollution, waste and operational performance across monitored rivers.",
 };
 
 const hubs = [

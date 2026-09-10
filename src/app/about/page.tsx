@@ -19,7 +19,7 @@ import { HintLabel } from "@/components/shared/hint-label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "About JAL-SURAKSHA",
+  title: "About",
   description:
     "Mission, pillars and target users of JAL-SURAKSHA — a smart river sanitation, monitoring and waste management platform.",
 };

@@ -1,7 +1,13 @@
+import type { Metadata } from "next"
 import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { ReportPollutionContent } from "./report-pollution-content"
+
+export const metadata: Metadata = {
+  title: "Report Pollution",
+  description: "Citizen-powered pollution reporting tool for submitting and tracking environmental incidents on rivers and waterways.",
+}
 
 function ReportPollutionLoading() {
   return (

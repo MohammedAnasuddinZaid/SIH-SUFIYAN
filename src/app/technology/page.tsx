@@ -20,7 +20,7 @@ import { HintLabel } from "@/components/shared/hint-label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Technology — JAL-SURAKSHA",
+  title: "Technology",
   description:
     "How JAL-SURAKSHA senses, detects, analyzes and acts on river pollution using sensors, AI, GIS and operational workflows.",
 };

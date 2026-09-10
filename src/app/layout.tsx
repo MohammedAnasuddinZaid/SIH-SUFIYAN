@@ -18,9 +18,40 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JAL-SURAKSHA — Sustainable Sanitation System of Rivers",
+  title: {
+    default: "JAL-SURAKSHA — Sustainable Sanitation System of Rivers",
+    template: "%s | JAL-SURAKSHA",
+  },
   description:
     "Smart river monitoring, pollution intelligence, waste management and community-driven sanitation action for cleaner rivers.",
+  keywords: [
+    "river monitoring",
+    "pollution detection",
+    "waste management",
+    "water quality",
+    "environmental intelligence",
+    "sanitation",
+    "smart city",
+    "India",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    siteName: "JAL-SURAKSHA",
+    title: "JAL-SURAKSHA — Sustainable Sanitation System of Rivers",
+    description:
+      "Smart monitoring, intelligent waste management, and community-driven action for cleaner and healthier rivers.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JAL-SURAKSHA — Sustainable Sanitation System of Rivers",
+    description:
+      "Smart monitoring, intelligent waste management, and community-driven action for cleaner and healthier rivers.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
