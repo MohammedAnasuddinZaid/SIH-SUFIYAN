@@ -103,6 +103,7 @@ import { MetricCard } from "@/components/shared/metric-card"
 import { StatusBadge } from "@/components/shared/status-badge"
 import { TrendIndicator } from "@/components/shared/trend-indicator"
 import { DemoBadge } from "@/components/shared/demo-badge"
+import { LiveSnapshotBanner } from "@/components/shared/live-snapshot-banner"
 import { DashboardSkeleton } from "@/components/shared/loading-skeleton"
 import { EmptyState } from "@/components/shared/empty-state"
 
@@ -451,6 +452,10 @@ export function DashboardContent() {
             </Button>
           </div>
         </header>
+
+        <div className="mt-6">
+          <LiveSnapshotBanner />
+        </div>
 
         {criticalZones.length > 0 && (
           <div className="mt-6 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center sm:justify-between">

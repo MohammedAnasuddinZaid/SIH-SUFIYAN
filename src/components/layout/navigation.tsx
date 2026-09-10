@@ -23,6 +23,7 @@ import {
   TrendingUp,
   BarChart3,
   Menu,
+  Waves,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -52,6 +53,7 @@ const TOP_LEVEL: NavItem[] = [
   { label: "Home", href: "/", icon: Home },
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "River Map", href: "/river-map", icon: Map },
+  { label: "Flood Watch", href: "/flood-risk", icon: Waves },
   { label: "AI Detection", href: "/waste-detection", icon: BrainCircuit },
   {
     label: "Pollution Analysis",

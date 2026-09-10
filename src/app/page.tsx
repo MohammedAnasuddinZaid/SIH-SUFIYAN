@@ -19,11 +19,13 @@ import {
   ShieldCheck,
   Shovel,
   Users,
+  Waves,
 } from "lucide-react"
 
 import { impactMetrics } from "@/lib/demo-data/impact"
 import { HealthScore } from "@/components/shared/health-score"
 import { DemoBadge } from "@/components/shared/demo-badge"
+import { LiveSnapshotBanner } from "@/components/shared/live-snapshot-banner"
 
 const pillars = [
   {
@@ -246,6 +248,13 @@ function Hero() {
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
+                href="/flood-risk"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white/10 px-6 text-sm font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm transition-all hover:bg-white/20"
+              >
+                <Waves className="h-4 w-4 text-teal-300" />
+                Live Flood Watch
+              </Link>
+              <Link
                 href="/report-pollution"
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/25 px-6 text-sm font-semibold text-white transition-colors hover:bg-white/10"
               >
@@ -293,6 +302,9 @@ function Hero() {
                   </div>
                 ))}
               </div>
+            </div>
+            <div className="mt-6">
+              <LiveSnapshotBanner />
             </div>
           </div>
         </div>
@@ -518,8 +530,9 @@ function CtaSection() {
               </Link>
             </div>
             <p className="mt-7 text-xs text-slate-400">
-              JAL-SURAKSHA is a working prototype. All data shown is simulated
-              prototype data for demonstration purposes.
+              Live river discharge & rainfall stream from ECMWF GloFAS and
+              Open-Meteo. Flood-risk and water-quality estimates are model-derived
+              for demonstration, not regulatory use.
             </p>
           </div>
         </div>
