@@ -21,12 +21,13 @@ export function DataFreshness({ updatedAt, isLoading, onRefresh, className }: Da
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 10000);
+    const timer = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const age = updatedAt ? Math.floor((Date.now() - new Date(updatedAt).getTime()) / 1000) : null;
   const stale = age !== null && age > 600;
+  const fresh = age !== null && age <= 60;
 
   return (
     <div
@@ -36,7 +37,18 @@ export function DataFreshness({ updatedAt, isLoading, onRefresh, className }: Da
         className
       )}
     >
-      <span className={cn("h-2 w-2 rounded-full", isLoading ? "animate-pulse bg-sky-400" : stale ? "bg-amber-500" : "bg-emerald-500")} />
+      <span
+        className={cn(
+          "h-2 w-2 rounded-full",
+          isLoading
+            ? "animate-pulse bg-sky-400"
+            : stale
+              ? "bg-amber-500"
+              : fresh
+                ? "animate-pulse bg-emerald-500"
+                : "bg-emerald-500"
+        )}
+      />
       {isLoading ? "Syncing…" : `Updated ${age === null ? "—" : formatAge(age)}`}
       {onRefresh && (
         <button

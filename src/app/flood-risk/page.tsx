@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -27,6 +28,7 @@ import {
 import { useLiveSnapshot } from "@/lib/live-client";
 import { LiveBadge } from "@/components/effects/live-badge";
 import { DataFreshness } from "@/components/effects/data-freshness";
+import { LiveRefreshControl } from "@/components/shared/live-refresh-control";
 import { TiltCard } from "@/components/effects/tilt-card";
 import { AnimatedCounter } from "@/components/effects/animated-counter";
 import type { RiverLiveData, FloodRiskLevel, DataSourceInfo } from "@/lib/pipeline/types";
@@ -59,8 +61,9 @@ function chartData(river: RiverLiveData) {
 }
 
 export default function FloodRiskPage() {
+  const [refreshMs, setRefreshMs] = useState(30_000);
   const { data, isLoading, error, refreshedAt, refresh } = useLiveSnapshot({
-    refreshMs: 5 * 60 * 1000,
+    refreshMs,
   });
 
   const rivers = data?.rivers ?? [];
@@ -107,6 +110,7 @@ export default function FloodRiskPage() {
               Discharge from ECMWF GloFAS v4 (real-time, 10-day forecast). Flood
               risk is model-derived from stage, momentum, rainfall and forecast peak.
             </p>
+            <LiveRefreshControl value={refreshMs} onChange={setRefreshMs} className="self-start" />
           </div>
 
           {isLoading && rivers.length === 0 ? (

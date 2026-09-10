@@ -666,6 +666,7 @@ export function MapWorkspace() {
   const [showFilters, setShowFilters] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState(false);
+  const mapErrorCount = useRef(0);
 
   const initialZoneFlown = useRef(false);
 
@@ -750,11 +751,13 @@ export function MapWorkspace() {
 
   const handleMapLoad = () => {
     setMapLoaded(true);
+    mapErrorCount.current = 0;
     setMapError(false);
   };
 
   const handleMapError = () => {
-    setMapError(true);
+    mapErrorCount.current += 1;
+    if (mapErrorCount.current > 2) setMapError(true);
   };
 
   const handleSearchSelect = (zoneId: string) => {
@@ -851,7 +854,7 @@ export function MapWorkspace() {
             <Map
               ref={mapRef}
               mapLib={maplibregl}
-              mapStyle="https://demotiles.maplibre.org/style.json"
+              mapStyle="https://tiles.openfreemap.org/styles/liberty"
               initialViewState={initialViewState}
               onLoad={handleMapLoad}
               onError={handleMapError}

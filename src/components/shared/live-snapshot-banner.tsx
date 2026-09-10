@@ -1,18 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Activity, ArrowRight, Radio, Siren } from "lucide-react";
 
 import { useLiveSnapshot } from "@/lib/live-client";
 import { LiveBadge } from "@/components/effects/live-badge";
 import { DataFreshness } from "@/components/effects/data-freshness";
+import { LiveRefreshControl } from "@/components/shared/live-refresh-control";
 
 /**
  * Compact live-data strip for embedding in dashboard/home pages.
  * Shows real upstream flood-risk status from the pipeline API.
  */
 export function LiveSnapshotBanner() {
-  const { data, isLoading, error, refresh } = useLiveSnapshot();
+  const [refreshMs, setRefreshMs] = useState(30_000);
+  const { data, isLoading, error, refresh } = useLiveSnapshot({ refreshMs });
 
   const rivers = data?.rivers ?? [];
   const highRisk = rivers.filter(
@@ -49,7 +52,7 @@ export function LiveSnapshotBanner() {
                 }
               />
             </div>
-            <p className="mt-1 text-xs leading-5 text-slate-300">
+            <p className="mt-1 hidden text-xs leading-5 text-slate-300 md:block">
               Real-time discharge & rainfall from ECMWF GloFAS / Open-Meteo ·
               model-derived flood risk and water-quality estimates.
             </p>
@@ -85,6 +88,11 @@ export function LiveSnapshotBanner() {
             isLoading={isLoading}
             onRefresh={refresh}
             className="border-white/15 bg-white/5 text-slate-200"
+          />
+          <LiveRefreshControl
+            value={refreshMs}
+            onChange={setRefreshMs}
+            variant="dark"
           />
           <Link
             href="/flood-risk"
