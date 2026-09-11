@@ -28,6 +28,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { NavInstallButton } from "@/components/shared/nav-install-button"
 import {
   Sheet,
   SheetContent,
@@ -183,6 +184,7 @@ export default function Navigation() {
             <CTA_ITEM.icon className="h-4 w-4" />
             {CTA_ITEM.label}
           </Link>
+          <NavInstallButton className="ml-1" />
         </div>
 
         <div className="ml-auto flex items-center gap-2 lg:hidden">
@@ -241,6 +243,7 @@ export default function Navigation() {
                   <CTA_ITEM.icon className="h-4.5 w-4.5" />
                   {CTA_ITEM.label}
                 </Link>
+                <NavInstallButton className="mt-2 w-full justify-center border-white/20" />
               </div>
             </SheetContent>
           </Sheet>

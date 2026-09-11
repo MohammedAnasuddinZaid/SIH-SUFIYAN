@@ -32,7 +32,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/live/[riverId]"
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          "Cache-Control": "public, s-maxage=120, stale-while-revalidate=240",
         },
       }
     );

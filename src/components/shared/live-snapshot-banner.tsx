@@ -14,7 +14,7 @@ import { LiveRefreshControl } from "@/components/shared/live-refresh-control";
  * Shows real upstream flood-risk status from the pipeline API.
  */
 export function LiveSnapshotBanner() {
-  const [refreshMs, setRefreshMs] = useState(30_000);
+  const [refreshMs, setRefreshMs] = useState(120_000);
   const { data, isLoading, error, refresh } = useLiveSnapshot({ refreshMs });
 
   const rivers = data?.rivers ?? [];

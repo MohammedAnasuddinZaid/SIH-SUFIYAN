@@ -42,11 +42,15 @@ export function useLiveSnapshot({
   }, [onError]);
 
   useEffect(() => {
-    void load();
+    const initial = setTimeout(() => void load(), 0);
+    let timer: ReturnType<typeof setInterval> | undefined;
     if (refreshMs > 0) {
-      const timer = setInterval(load, refreshMs);
-      return () => clearInterval(timer);
+      timer = setInterval(load, refreshMs);
     }
+    return () => {
+      clearTimeout(initial);
+      if (timer) clearInterval(timer);
+    };
   }, [load, refreshMs]);
 
   return { data, isLoading, error, refreshedAt, refresh: load };

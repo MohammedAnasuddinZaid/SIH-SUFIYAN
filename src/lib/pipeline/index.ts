@@ -14,8 +14,8 @@ import type {
   FloodRiskLevel,
 } from "./types";
 
-const CACHE_TTL_MS = 15 * 60 * 1000;
-const SNAPSHOT_KEY = "live-snapshot-v2";
+const CACHE_TTL_MS = Number(process.env.PIPELINE_CACHE_TTL_MS) || 2 * 60 * 1000;
+const SNAPSHOT_KEY = "live-snapshot-v4";
 
 interface Hydrol {
   flood: FloodPoint[] | null;
@@ -98,11 +98,14 @@ function buildRiver(gauge: (typeof gauges)[number], hydrol: Hydrol): RiverLiveDa
 
   const allDates = floodPoint?.dates ?? [];
   const obsHistory = floodPoint?.discharge ?? [];
-  const obsDates = allDates.slice(0, 45);
-  const fcDates = allDates.slice(45);
-  const fcMean = floodPoint?.dischargeMean.slice(45) ?? [];
-  const fcMin = floodPoint?.dischargeMin.slice(45) ?? [];
-  const fcMax = floodPoint?.dischargeMax.slice(45) ?? [];
+  // Derive the actual split point from data: forecast dates start after observed
+  const totalDates = allDates.length;
+  const obsCount = Math.min(45, totalDates - 10);
+  const obsDates = allDates.slice(0, obsCount);
+  const fcDates = allDates.slice(obsCount);
+  const fcMean = floodPoint?.dischargeMean.slice(obsCount) ?? [];
+  const fcMin = floodPoint?.dischargeMin.slice(obsCount) ?? [];
+  const fcMax = floodPoint?.dischargeMax.slice(obsCount) ?? [];
 
   const rainHistory = rainPoint?.precipitation ?? [];
   const rainDates = rainPoint?.dates ?? [];
@@ -129,16 +132,19 @@ function buildRiver(gauge: (typeof gauges)[number], hydrol: Hydrol): RiverLiveDa
     dangerThresholdM3s: gauge.dangerThresholdM3s,
   });
 
+  // Use actual API rainfall forecast data where available, not synthetic
+  const rainFcDates = rainPoint?.dates?.slice(obsCount) ?? [];
+  const rainFcValues = rainPoint?.precipitation?.slice(obsCount) ?? [];
   const rainfallSeries = {
     last24h: round(rainLast24h, 1),
     unit: "mm",
     history: sliceArrays(rainDates, 30).map((d, i) => ({
       date: d,
-      value: round(rainHistory[rainHistory.length - 30 + i] ?? 0, 1),
+      value: round(rainHistory[Math.max(0, rainHistory.length - 30 + i)] ?? 0, 1),
     })),
-    forecast: fcDates.slice(0, 7).map((d, i) => ({
+    forecast: rainFcDates.slice(0, 7).map((d, i) => ({
       date: d,
-      value: round(rainLast24h * (1 + Math.sin(i / 2)) * 0.5, 1),
+      value: round(Math.max(0, rainFcValues[i] ?? 0), 1),
     })),
   };
 
@@ -203,11 +209,30 @@ export async function getLiveSnapshot(): Promise<LiveSnapshot> {
   if (cached) return cached;
 
   const hydrol = await fetchHydrology();
-  const liveValid =
-    (hydrol.flood?.length ?? 0) === gauges.length &&
-    (hydrol.rain?.length ?? 0) === gauges.length;
+  const fallback = fallbackHydrology();
 
-  const effectiveHydrol = liveValid ? hydrol : fallbackHydrology();
+  // Merge per-gauge: prefer real upstream data, backfill missing gauges with
+  // the deterministic simulation so the board is always fully populated.
+  const effectiveHydrol: Hydrol = {
+    floodLive: (hydrol.flood?.length ?? 0) > 0,
+    rainLive: (hydrol.rain?.length ?? 0) > 0,
+    flood:
+      (hydrol.flood?.length ?? 0) > 0
+        ? gauges.map((gauge) => {
+            const live = hydrol.flood?.find((f) => f.gauge.riverId === gauge.riverId);
+            const sim = fallback.flood?.find((f) => f.gauge.riverId === gauge.riverId);
+            return live ?? sim!;
+          })
+        : fallback.flood,
+    rain:
+      (hydrol.rain?.length ?? 0) > 0
+        ? gauges.map((gauge) => {
+            const live = hydrol.rain?.find((r) => r.gauge.riverId === gauge.riverId);
+            const sim = fallback.rain?.find((r) => r.gauge.riverId === gauge.riverId);
+            return live ?? sim!;
+          })
+        : fallback.rain,
+  };
 
   const riverData = gauges.map((gauge) => buildRiver(gauge, effectiveHydrol));
   const zones = buildZones(riverData);

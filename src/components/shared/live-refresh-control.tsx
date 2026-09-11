@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 
 export const LIVE_INTERVALS = [
   { label: "Pause", ms: 0 },
-  { label: "5s", ms: 5_000 },
-  { label: "10s", ms: 10_000 },
-  { label: "30s", ms: 30_000 },
-  { label: "60s", ms: 60_000 },
+  { label: "1m", ms: 60_000 },
+  { label: "2m", ms: 120_000 },
+  { label: "5m", ms: 300_000 },
+  { label: "10m", ms: 600_000 },
 ] as const;
 
 export function LiveRefreshControl({

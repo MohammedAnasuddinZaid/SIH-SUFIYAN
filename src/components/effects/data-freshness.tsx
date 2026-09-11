@@ -18,14 +18,14 @@ function formatAge(seconds: number): string {
 }
 
 export function DataFreshness({ updatedAt, isLoading, onRefresh, className }: DataFreshnessProps) {
-  const [, setTick] = useState(0);
+  const [now, setNow] = useState<number>(() => Date.now());
 
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 1000);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const age = updatedAt ? Math.floor((Date.now() - new Date(updatedAt).getTime()) / 1000) : null;
+  const age = updatedAt ? Math.max(0, Math.floor((now - new Date(updatedAt).getTime()) / 1000)) : null;
   const stale = age !== null && age > 600;
   const fresh = age !== null && age <= 60;
 

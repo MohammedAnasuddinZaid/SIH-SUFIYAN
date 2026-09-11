@@ -33,6 +33,10 @@ interface InteractiveMapProps {
   PopupContent?: React.ReactNode;
 }
 
+const MAP_STYLE =
+  process.env.NEXT_PUBLIC_MAP_TILE_URL ??
+  "https://tiles.openfreemap.org/styles/liberty";
+
 export function InteractiveMap({
   mapRef,
   initialViewState,
@@ -52,7 +56,7 @@ export function InteractiveMap({
     <Map
       ref={mapRef}
       mapLib={maplibregl}
-      mapStyle="https://tiles.openfreemap.org/styles/liberty"
+      mapStyle={MAP_STYLE}
       initialViewState={initialViewState}
       onLoad={onLoad}
       onError={onError}

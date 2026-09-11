@@ -52,14 +52,20 @@ export function estimateWaterQuality(req: WqRequest): WaterQualityEstimate {
   const dilutionBoost = Math.min(18, (ratio - 1) * 16);
 
   // First-flush: after a dry spell, heavy rain scours pollutant load into the river.
-  const dryDays = countConsecutiveDryDays(req.rainfallHistory, req.rainfallDates);
+  const dryDays = countConsecutiveDryDays(req.rainfallHistory);
   const flushPenalty = req.rainfallLast24h > 12 && dryDays >= 5 ? Math.min(14, req.rainfallLast24h * 0.35) : 0;
 
   let wqi = baseline.wqiBase + dilutionBoost - flushPenalty;
-  const seasonality = Math.sin((Date.now() / 86_400_000 / 365) * 2 * Math.PI) * 4;
-  wqi += seasonality;
 
-  const wqiFinal = Math.round(Math.min(95, Math.max(15, wqi)));
+  // Indian monsoon runs roughly June 1 – Sep 30: runoff raises turbidity and
+  // BOD/COD loads, so the seasonal term is negative (worse) during those weeks.
+  const now = new Date();
+  const month = now.getUTCMonth() + 1;
+  const isMonsoon = (month >= 6 && month <= 9);
+  const monsoonPenalty = isMonsoon ? 3 + Math.sin((Date.now() / 86_400_000) * 2 * Math.PI) * 2 : 0;
+  wqi -= monsoonPenalty;
+
+  const wqiFinal = Math.round(clampWqi(wqi));
 
   const ph = round(Math.min(8.5, Math.max(6.2, baseline.phBase + (ratio - 1) * 0.05 - (flushPenalty > 5 ? 0.3 : 0))), 2);
   const dissolvedOxygen = round(Math.min(8.5, Math.max(0.5, baseline.doBase + dilutionBoost * 0.08 - flushPenalty * 0.1)), 2);
@@ -101,13 +107,18 @@ export function estimateWaterQuality(req: WqRequest): WaterQualityEstimate {
   };
 }
 
-function countConsecutiveDryDays(values: number[], dates: string[]): number {
+function countConsecutiveDryDays(values: number[]): number {
   let count = 0;
   for (let i = values.length - 1; i >= 0; i--) {
     if ((values[i] ?? 0) < 0.5) count++;
     else break;
   }
   return count;
+}
+
+function clampWqi(value: number): number {
+  if (!Number.isFinite(value)) return 50;
+  return Math.min(95, Math.max(15, value));
 }
 
 function futureDate(daysFromNow: number): string {

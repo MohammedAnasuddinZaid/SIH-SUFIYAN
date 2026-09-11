@@ -9,7 +9,7 @@ export async function GET() {
     const snapshot = await getLiveSnapshot();
     return NextResponse.json(snapshot, {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=240",
         "X-Data-Mode": snapshot.mode,
         "X-Cache-Size": String(cacheSize()),
       },

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Upload,
   ImageIcon,
@@ -346,12 +347,15 @@ function WasteDetectionContent() {
               {/* Preview */}
               {(imagePreview || sampleKind) && (
                 <div className="space-y-3">
-                  <div className="relative overflow-hidden rounded-lg border">
+                  <div className="relative h-48 w-full overflow-hidden rounded-lg border sm:h-64">
                     {imagePreview ? (
-                      <img
+                      <Image
                         src={imagePreview}
                         alt="Uploaded waste sample"
-                        className="h-48 w-full object-cover sm:h-64"
+                        fill
+                        unoptimized
+                        sizes="100vw"
+                        className="object-cover"
                       />
                     ) : (
                       <div

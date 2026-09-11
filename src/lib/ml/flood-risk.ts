@@ -1,5 +1,5 @@
 import type { FloodRisk, FloodRiskLevel, TimePoint } from "@/lib/pipeline/types";
-import { lastN, linearFit, mean, round, stdDev } from "./statistics";
+import { linearFit, mean, round } from "./statistics";
 
 export interface FloodInput {
   gaugeId: string;
@@ -38,7 +38,6 @@ function percentile(sorted: number[], p: number): number {
  */
 export function computeFloodRisk(input: FloodInput): FloodRisk {
   const now = input.history[input.history.length - 1] ?? 0;
-  const recent = lastN(input.history, 7);
   const sorted = [...input.history].sort((a, b) => a - b);
 
   const median = percentile(sorted, 0.5);
@@ -47,32 +46,39 @@ export function computeFloodRisk(input: FloodInput): FloodRisk {
   const envelope = Math.max(percentile(sorted, 0.99), dangerMark);
   const base = Math.max(input.baseM3s, median, 1);
 
-  // 1) Stage position (grid-scale, self-calibrated danger level)
+  // 1) Stage position (grid-scale, self-calibrated danger level). Guard against
+  //    zero/NaN thresholds from empty or degenerate windows.
+  const gh = (v: number) => (Number.isFinite(v) ? v : 0);
+  const nowG = gh(now);
+  const floodMarkG = gh(floodMark);
+  const dangerMarkG = gh(dangerMark);
   let stageScore = 0;
-  if (now >= dangerMark) {
+  if (nowG >= dangerMarkG) {
     stageScore = 100;
-  } else if (now >= floodMark) {
-    stageScore = 75 + (25 * (now - floodMark)) / Math.max(1, dangerMark - floodMark);
+  } else if (nowG >= floodMarkG) {
+    stageScore = 75 + (25 * (nowG - floodMarkG)) / Math.max(1, dangerMarkG - floodMarkG);
   } else {
-    stageScore = (now / Math.max(1, floodMark)) * 70;
+    stageScore = (nowG / Math.max(1, floodMarkG)) * 70;
   }
 
   // 2) Momentum — rise over the trailing week vs seasonal median
-  const momentum = input.history.length >= 8 ? (now - median) / (base || 1) : 0;
-  const momentumScore = Math.min(100, Math.max(0, momentum * 9));
+  const momentum = input.history.length >= 8 ? (nowG - median) / (base || 1) : 0;
+  const momentumScore = Number.isFinite(momentum) ? Math.min(100, Math.max(0, momentum * 9)) : 0;
 
   // 3) Forecast peak pressure against the observed envelope
-  const maxForecastPeak = Math.max(0, ...input.forecastMax);
+  const maxForecastPeak = Math.max(0, ...input.forecastMax.filter(Number.isFinite));
   let forecastScore = 0;
-  if (maxForecastPeak >= dangerMark) forecastScore = 95;
-  else if (maxForecastPeak >= floodMark) {
-    forecastScore = 65 + (30 * (maxForecastPeak - floodMark)) / Math.max(1, dangerMark - floodMark);
+  if (maxForecastPeak >= dangerMarkG) forecastScore = 95;
+  else if (maxForecastPeak >= floodMarkG) {
+    forecastScore = 65 + (30 * (maxForecastPeak - floodMarkG)) / Math.max(1, dangerMarkG - floodMarkG);
   } else {
-    forecastScore = (maxForecastPeak / Math.max(1, floodMark)) * 55;
+    forecastScore = (maxForecastPeak / Math.max(1, floodMarkG)) * 55;
   }
 
   // 4) Rainfall influence
-  const rainScore = Math.min(100, (input.rainfallLast24h / 80) * 100);
+  const rainScore = Number.isFinite(input.rainfallLast24h)
+    ? Math.min(100, (Math.max(0, input.rainfallLast24h) / 80) * 100)
+    : 0;
 
   const score = round(
     stageScore * 0.5 + momentumScore * 0.25 + forecastScore * 0.15 + rainScore * 0.1
@@ -82,7 +88,7 @@ export function computeFloodRisk(input: FloodInput): FloodRisk {
   if (score >= 50) drivers.push("discharge_above_flood_stage");
   if (momentum > 0.5) drivers.push("rapid_rise_in_discharge");
   if (momentum > 0.12) drivers.push("rising_discharge_trend");
-  if (input.rainfallLast24h > 25) drivers.push("heavy_recent_rainfall");
+  if (Number.isFinite(input.rainfallLast24h) && input.rainfallLast24h > 25) drivers.push("heavy_recent_rainfall");
   if (maxForecastPeak >= floodMark) drivers.push("flood_peak_in_forecast");
   if (drivers.length === 0) drivers.push("within_seasonal_norm");
 
@@ -144,10 +150,8 @@ export function buildDischargeSeries(
 
 export function anomalyFlags(history: number[], dates: string[]): TimePoint[] {
   const fit = linearFit(history);
-  const resid = stdDev(history);
   return history.map((v, i) => {
     const predicted = fit.intercept + fit.slope * i;
-    const deviation = resid > 0 ? (v - predicted) / resid : 0;
     return { date: dates[i] ?? "", value: round(v - predicted) };
   });
 }

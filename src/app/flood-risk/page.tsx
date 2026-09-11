@@ -61,7 +61,7 @@ function chartData(river: RiverLiveData) {
 }
 
 export default function FloodRiskPage() {
-  const [refreshMs, setRefreshMs] = useState(30_000);
+  const [refreshMs, setRefreshMs] = useState(120_000);
   const { data, isLoading, error, refreshedAt, refresh } = useLiveSnapshot({
     refreshMs,
   });
@@ -555,7 +555,10 @@ function DetailSection({ rivers }: { rivers: RiverLiveData[] }) {
 
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <StatBox label="Current discharge" value={`${featured.discharge.current.toLocaleString()} m³/s`} />
-        <StatBox label="Forecast peak" value={`${Math.max(...featured.discharge.forecast.map((f) => f.max)).toLocaleString()} m³/s`} />
+        <StatBox
+          label="Forecast peak"
+          value={`${(featured.discharge.forecast.length ? Math.max(...featured.discharge.forecast.map((f) => f.max)) : featured.discharge.current).toLocaleString()} m³/s`}
+        />
         <StatBox label="Risk score" value={`${featured.floodRisk.score}/100 · ${featured.floodRisk.level}`} />
       </div>
     </section>
@@ -599,8 +602,6 @@ function SourcesPanel({ sources }: { sources: DataSourceInfo[] }) {
     </section>
   );
 }
-
-type LiveSnapshotSources = Awaited<ReturnType<typeof import("@/lib/live-client").useLiveSnapshot>>["data"] extends infer _ ? NonNullable<Awaited<ReturnType<typeof import("@/lib/live-client").useLiveSnapshot>>["data"]>["sources"] : never;
 
 function BoardSkeleton() {
   return (

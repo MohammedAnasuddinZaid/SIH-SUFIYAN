@@ -146,5 +146,6 @@ export function clamp(value: number, min: number, max: number): number {
 }
 
 export function round(value: number, digits = 2): number {
+  if (!Number.isFinite(value)) return 0;
   return Math.round(value * 10 ** digits) / 10 ** digits;
 }
